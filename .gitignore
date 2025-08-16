@@ -1,8 +1,10 @@
 .env
 metodos.py
 log.txt
-FASES.txt
-Dato de actualizacion.txt
 __pycache__
-test.py
 Descargas
+bot_modulos 
+conexion.py
+test.py
+botones.py
+FASES.txt
