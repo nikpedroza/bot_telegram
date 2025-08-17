@@ -1,3 +1,4 @@
+import asyncio
 from telegram import Update,InlineKeyboardButton,InlineKeyboardMarkup,ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import ContextTypes
 from log_datos import guardar_log
@@ -9,10 +10,10 @@ bandera_clima = False
 
 '''FUNCIONES UNICAMENTE PARA COMANDOS'''
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):    #/start
-    user_id = update.effective_user.id
-    username = update.effective_user.username
-    message_text = update.message.text if update.message else "Boton Start"
-    guardar_log(id=user_id, username=username, text=message_text)
+    user_id= update.effective_user.id
+    username = update.effective_user.name
+    messge_text = update.message.text if update.message else "Boton Start"
+    asyncio.create_task(guardar_log(id=user_id,name=username,text=messge_text))
     nombre = update.effective_user.username
 
     botones = [
@@ -27,10 +28,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):    #/start
                                     \nque te gustaria hacer?",parse_mode="HTML",reply_markup=reply_markup)
         
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):     #/help
-    user_id = update.effective_user.id
-    username = update.effective_user.username
-    message_text = update.message.text if update.message else "Boton ayuda"
-    guardar_log(id=user_id, username=username, text=message_text)
+    user_id= update.effective_user.id
+    username = update.effective_user.name
+    messge_text = update.message.text if update.message else "Boton Help"
+    asyncio.create_task(guardar_log(id=user_id,name=username,text=messge_text))
 
     respuesta = "/start : iniciar bot.\n/info : Datos sobre el bot\n/YT : Descargar videos de youtube\n/clima <ciudad>\n/criptos : obtener el precio de una criptomoneda\n/dolar: " \
     "Obtener el precio del dolar a pesos"
@@ -41,10 +42,10 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):     #/help
         await update.message.reply_text(respuesta)
 
 async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):     #/info
-    user_id = update.effective_user.id
-    username = update.effective_user.username    
-    message_text = update.message.text if update.message else "Boton Info"
-    guardar_log(user_id, username, message_text)  
+    user_id= update.effective_user.id
+    username = update.effective_user.name
+    messge_text = update.message.text if update.message else "Boton Info"
+    asyncio.create_task(guardar_log(id=user_id,name=username,text=messge_text))
     
     respuesta = ("Esto es un bot de prueba realizado por mi parte con fines educativos.\nEstoy realizando este bot en Python para expandir mis conocimiento mediante la practica" \
     " buscando la forma de realizar funciones nuevas y interesantes o entretenidas")
@@ -55,11 +56,10 @@ async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):     #/info
         await update.message.reply_text(respuesta)
 
 async def youtube(update: Update, context: ContextTypes.DEFAULT_TYPE):     #/YOUTUBE
-    user_id = update.effective_user.id
-    username = update.effective_user.username
-    message_text = update.message.text if update.message else "Boton Youtube"
-    guardar_log(user_id, username, message_text)
-
+    user_id= update.effective_user.id
+    username = update.effective_user.name
+    messge_text = update.message.text if update.message else "YT"
+    asyncio.create_task(guardar_log(id=user_id,name=username,text=messge_text))
     respuesta = "SECCION EN PREPARACION"
 
     if  update.callback_query:
@@ -69,10 +69,10 @@ async def youtube(update: Update, context: ContextTypes.DEFAULT_TYPE):     #/YOU
 
 async def clima(update: Update, context: ContextTypes.DEFAULT_TYPE):    #Clima
     global bandera_clima
-    user_id = update.effective_user.id
-    username = update.effective_user.username
-    message_text = update.message.text if update.message else "Boton Clima"
-    guardar_log(user_id, username, message_text)
+    user_id= update.effective_user.id
+    username = update.effective_user.name
+    messge_text = update.message.text if update.message else "Clima"
+    asyncio.create_task(guardar_log(id=user_id,name=username,text=messge_text))
     
     if bandera_clima:
         #Esto en caso de que el usuario acceda desde un boton pidiendo el Clima
@@ -96,10 +96,10 @@ async def clima(update: Update, context: ContextTypes.DEFAULT_TYPE):    #Clima
         await update.message.reply_text(respuesta)
 
 async def criptos(update: Update, context: ContextTypes.DEFAULT_TYPE):     #/Criptos
-    user_id = update.effective_user.id
-    username = update.effective_user.username
-    message_text = update.message.text if update.message else "Boton Cripto"
-    guardar_log(user_id, username, message_text)
+    user_id= update.effective_user.id
+    username = update.effective_user.name
+    messge_text = update.message.text if update.message else "Criptos"
+    asyncio.create_task(guardar_log(id=user_id,name=username,text=messge_text))
 
     respuesta = "SECCION EN PREPARACION"
 
@@ -109,10 +109,10 @@ async def criptos(update: Update, context: ContextTypes.DEFAULT_TYPE):     #/Cri
         await update.message.reply_text(respuesta)
 
 async def dolar(update: Update, context: ContextTypes.DEFAULT_TYPE):     #/USD
-    user_id = update.effective_user.id
-    username = update.effective_user.username
-    message_text = update.message.text if update.message else "Boton USD"
-    guardar_log(user_id, username, message_text)
+    user_id= update.effective_user.id
+    username = update.effective_user.name
+    messge_text = update.message.text if update.message else "boton Dolar"
+    asyncio.create_task(guardar_log(id=user_id,name=username,text=messge_text))
 
     respuesta = "SECCION EN PREPARACION"
 
@@ -127,9 +127,9 @@ async def recibir_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lat = user_location.latitude
     lon = user_location.longitude
 
-    user_id = update.effective_user.id
-    username = update.effective_user.username
-    message_text = update.message.text if update.message else "Envio su Ubicacion"
+    user_id= update.effective_user.id
+    username = update.effective_user.name
+    messge_text = update.message.text if update.message else "Envio una ubicacion"
     
     if bandera_clima:   #Verificamos que el usuario accedio desde un boton
         info = obtener_clima(lat=lat, lon=lon)
@@ -138,13 +138,13 @@ async def recibir_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         try:
             if lat or lon:
-                guardar_log(user_id, username, message_text,lat,lon)
+                asyncio.create_task(guardar_log(id=user_id,name=username,text=messge_text,lat=lat,lon=lon))
         except:
-            guardar_log(user_id, username, message_text)
+            asyncio.create_task(guardar_log(id=user_id,name=username,text=messge_text))
         bandera_clima = False   #Asi retorna a su estado anterior
     else:
         await update.message.reply_text("Linda ubicacion, espero que estes de vacaciones :)")
-        guardar_log(user_id, username, "Envio una ubicacion",lat=lat,lon=lon)
+        asyncio.create_task(guardar_log(id=user_id,name=username,text="Envio una ubicacion",lat=lat,lon=lon))
 
 async def botones_callback(update: Update,context: ContextTypes.DEFAULT_TYPE):
     global bandera_clima

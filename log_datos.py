@@ -1,103 +1,114 @@
+# archivo_async.py
 import datetime
-from mysql.connector import Error
-from conexion import conexionDB
+import asyncio
+import aiomysql
 import os
+from dotenv import load_dotenv  #Credenciales del servidor
 
-def guardar_user(conexion,cursor,id,name):
+load_dotenv()
+
+host = os.getenv("HOST")
+user = os.getenv("USER")
+password = os.getenv("PASSWORD")
+database = os.getenv("DATABASE")
+port = 3307
+
+#Conexion a la DB
+async def conexionDB():
+    #Conectar MySQL usando asincronia
+    conn = await aiomysql.connect(
+        host=host,
+        user=user,
+        password=password,
+        db=database,
+        port=port        
+        )
+    print("=== CONEXION ESTABLECIDA ===")
+    return conn
+
+# Guardamos un usuario
+async def guardar_user(conexion, cursor, id, name):
     try:
-        insert = "INSERT INTO usuarios (telegram_id,username) VALUES (%s,%s)"
-        parametros = (id,name)
-        cursor.execute(insert,parametros)
-        conexion.commit()
+        insert = "INSERT INTO usuarios (telegram_id, username) VALUES (%s, %s)"
+        parametros = (id, name)
+        await cursor.execute(insert, parametros)
+        await conexion.commit()
         print(f"Usuario {name} guardado correctamente")
     except Exception as e:
-        conexion.rollback()
+        await conexion.rollback()
         print(f"ERROR {e}")
 
-
-#Guardamos los logs del usuario 
-def guardar_log(id:int = None, username:str=None, text:str=None, lat=None, lon=None):
-    print("DEBUG guardar_log")
+# Guardamos los logs
+async def guardar_log(id: int = None, name: str = None, text: str = None, lat=None, lon=None):
     if id is None:
         print("ERROR: telegram_id es None")
         return
-    print("DEBUG 2")
+
     conexion = None
     cursor = None
-    print("DEBUG 3")
     try:
-        print("DEBUG 4")
-        conexion = conexionDB()
-        print(f"DEBUG: conexion")
-        cursor = conexion.cursor()
-        cursor.execute("SET time_zone = '-03:00';")
-        if id is None:
-            print("ERROR: telegram_id es None")
-            return
+        conexion = await conexionDB()
+        async with conexion.cursor() as cursor:
+            await cursor.execute("SET time_zone = '-03:00';")
 
-        # Verificar si el usuario ya existe
-        select = "SELECT 1 FROM usuarios WHERE telegram_id = %s"
-        cursor.execute(select, (id,))
-        datos = cursor.fetchone()
-         
-        if not datos:
-            # Si no existe, insertamos el usuario
-            guardar_user(conexion, cursor, id, username)
+            # Verificar si el usuario ya existe
+            select = "SELECT 1 FROM usuarios WHERE telegram_id = %s"
+            await cursor.execute(select, (id,))
+            datos = await cursor.fetchone()
 
-        insert = "INSERT INTO log (telegram_id, comando) VALUES (%s, %s)"
-        if lat is not None or lon is not None:
-            text = f"{text} {lat} {lon}"
+            if not datos:
+                # Si no existe, insertamos el usuario
+                await guardar_user(conexion, cursor, id, name)
 
-        parametros = (id, text)
-        cursor.execute(insert, parametros)
-        conexion.commit()
-        print("Log guardado correctamente")
+            insert = "INSERT INTO log (telegram_id, comando) VALUES (%s, %s)"
+            if lat is not None or lon is not None:
+                text = f"{text} {lat} {lon}"
 
+            parametros = (id, text)
+            await cursor.execute(insert, parametros)
+            await conexion.commit()
     except Exception as e:
         if conexion:
-            conexion.rollback()
+            await conexion.rollback()
         print(f"ERROR AL GUARDAR LOG: {repr(e)}")
-    except Error as db_err:
-        print(f"Error de base de datos: {db_err}")
     finally:
-        if cursor:
-            cursor.close()
         if conexion:
             conexion.close()
-    
 
-def crear_tablas():
+
+# Crear tablas
+async def crear_tablas():
+    conexion = await conexionDB()
     try:
-        tabla_usuarios = """
-        CREATE TABLE IF NOT EXISTS usuarios(
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            telegram_id BIGINT NOT NULL UNIQUE,
-            username VARCHAR(100),
-            fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        async with conexion.cursor() as cursor:
+            tabla_usuarios = """
+            CREATE TABLE IF NOT EXISTS usuarios(
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                telegram_id BIGINT NOT NULL UNIQUE,
+                username VARCHAR(100),
+                fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );"""
-        tabla_log = """
-        CREATE TABLE IF NOT EXISTS log(
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            telegram_id BIGINT NOT NULL,
-            comando TEXT,
-            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """
-        cursor.execute(tabla_usuarios)
-        cursor.execute(tabla_log)
+            tabla_log = """
+            CREATE TABLE IF NOT EXISTS log(
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                telegram_id BIGINT NOT NULL,
+                comando TEXT,
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );"""
+            await cursor.execute(tabla_usuarios)
+            await cursor.execute(tabla_log)
 
-        try:
+            # Crear clave foránea si no existe
             db = os.getenv("DATABASE")
-            # Verificar si la clave foránea existe
-            cursor.execute("""
+            await cursor.execute(f"""
                 SELECT CONSTRAINT_NAME
                 FROM information_schema.referential_constraints
                 WHERE TABLE_NAME = 'log'
                 AND CONSTRAINT_SCHEMA = '{db}'
                 AND CONSTRAINT_NAME = 'fk_log_telegram_id'
             """)
-            if not cursor.fetchone():
-                cursor.execute("""
+            if not await cursor.fetchone():
+                await cursor.execute("""
                     ALTER TABLE log
                     ADD CONSTRAINT fk_log_telegram_id
                     FOREIGN KEY (telegram_id) REFERENCES usuarios(telegram_id)
@@ -105,28 +116,25 @@ def crear_tablas():
                 print("Clave foránea creada")
             else:
                 print("Clave foránea ya existe")
-        except Error as e:
-            print(f"Clave foránea ya existe Error: {e}")
-    except Error as e:
+
+        return tabla_usuarios, tabla_log
+
+    except Exception as e:
+        await conexion.rollback()
+        print(f"Error crear_tablas: {e}")
+    finally:
+        conexion.close()
+
+
+# Main para ejecutar directamente
+async def main():
+    try:
+        await crear_tablas()
+        # Aquí podrías probar guardar_log u otras funciones
+        # await guardar_log(123456, "usuario_test", "comando_test")
+    except Exception as e:
+        print("=== ERROR AL EJECUTAR ===")
         print(e)
-        conexion.rollback()
-
-    return tabla_usuarios,tabla_log
-
 
 if __name__ == "__main__":
-    try:
-        conexion = conexionDB()
-        cursor = conexion.cursor()
-
-        crear_tablas()#Creamos tablas
-        #consultas()
-
-    except Error as e:
-        print("=== ERROR AL CONECTAR CON LA BASE DE DATOS ===")
-        print(e)
-
-    finally:
-        print("=== CONEXION CERRADA ===")
-        cursor.close()
-        conexion.close()
+    asyncio.run(main())
