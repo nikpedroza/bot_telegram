@@ -26,11 +26,11 @@ def obtener_clima(ciudad: str = None, lat: float = None, lon: float = None):
         print(f"Error al obtener el clima: {data.get('message','desconocido')}")
 
     tiempo ={
-        "clima" : data["weather"][0]["description"],
-        "temp_actual" : data["main"]["temp"],
-        "sensasion_termica" : data["main"]["feels_like"],
-        "temp_min" : data["main"]["temp_min"],
-        "temp_max" : data["main"]["temp_max"],
-        "humedad" : data["main"]["humidity"]
+        "clima" : data["weather"][0]["description"],    #STR
+        "temp_actual" : round(data["main"]["temp"],1),   #FLOAT
+        "sensasion_termica" : round(data["main"]["feels_like"],1), #FLOAT
+        "temp_min" : round(data["main"]["temp_min"],1),  #FLOAT
+        "temp_max" : round(data["main"]["temp_max"],1),  #FLOAT
+        "humedad" : data["main"]["humidity"]    #INT
     }
     return tiempo
