@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
-from log_users import guardar_user   #Funcion que guarda lo que recibe de un usuario en un .txt
+from log_datos import guardar_log  #Funcion que guarda lo que recibe de un usuario en un .txt
 import os
 
 
@@ -35,12 +35,12 @@ async def contenido(update: Update, context: ContextTypes.DEFAULT_TYPE): #Descar
         }
     }
     if update.message.sticker:
-        guardar_user(update.effective_user.id,update.effective_user.username, "Envio un Sticker")
+        guardar_log(update.effective_user.id,update.effective_user.username, "Envio un Sticker")
         await update.message.reply_text("Buen sticker bro")
         return
     
     if update.message.voice:
-        guardar_user(update.effective_user.id,update.effective_user.username, "Envio un mensaje de voz")
+        guardar_log(update.effective_user.id,update.effective_user.username, "Envio un mensaje de voz")
         await update.message.reply_text("No tengo oidos perdon :c")
         return
 
@@ -53,8 +53,8 @@ async def contenido(update: Update, context: ContextTypes.DEFAULT_TYPE): #Descar
             ruta_final = descargas(nombre_final)    #Ruta
             await file_info.download_to_drive(ruta_final)   #Descarga
 
-            guardar_user(update.effective_user.id, update.effective_user.username, f"{tipo.capitalize()} descargado en {ruta_final}")#Log
+            guardar_log(update.effective_user.id, update.effective_user.username, f"{tipo.capitalize()} descargado en {ruta_final}")#Log
             return
     #Si no coincide con nada
-    guardar_user(update.effective_user.id, update.effective_user.username, "Envio un tipo de contenido no soportado")
+    guardar_log(update.effective_user.id, update.effective_user.username, "Envio un tipo de contenido no soportado")
     await update.message.reply_text("Contenido no soportado. Porfavor, envia solo texto o comandos")
